@@ -20,6 +20,8 @@ def get_token(client_id, client_secret):
     token = json_result["access_token"]
     return token
 
+def get_auth_header(token):
+    return {"Authorization": "Bearer " + token}
 def run():
     load_dotenv()
     client_id = os.getenv("CLIENT_ID")
