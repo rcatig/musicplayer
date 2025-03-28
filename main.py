@@ -1,14 +1,39 @@
 import json
 import os
 import base64
+import urllib.parse
 import requests
 from dotenv import load_dotenv
 from requests import post
-from flask import Flask
+from flask import Flask, redirect
 
-def create_flask(secret_key):
-    app = Flask(__name__)
-    app.secret_key = secret_key
+
+secret_key = os.getenv("SECRET_KEY")
+app = Flask(__name__)
+app.secret_key = secret_key
+
+@app.route("/")
+def index():
+    return (
+            "Welcome to Aira's Spotify Player"
+            "<a href='/login'>Login with Spotify</a>"
+    )
+
+@app.route("/")
+def login(client_id, redirect_uri, auth_url):
+    scope = "user-read-currently-playing"
+    params = {
+        "client_id" : client_id,
+        "response_type" : "code",
+        "scope" : scope,
+        "redirect_uri" : redirect_uri,
+        "show_dialog" : True
+    }
+
+    auth_url = f"{auth_url}?{urllib.parse.urlencode(params)}"
+
+    return redirect(auth_url)
+
 
 def get_token(client_id, client_secret):
     auth_string = client_id  + ":" + client_secret
@@ -37,13 +62,11 @@ def get_current_track(token):
         headers=auth_header
     )
     resp_json = response.json()
-    print(resp_json)
     track_type = resp_json["currently_playing_type"]
     return track_type
 
 def run():
     load_dotenv()
-    secret_key = os.getenv("SECRET_KEY")
     client_id = os.getenv("CLIENT_ID")
     client_secret = os.getenv("CLIENT_SECRET")
     redirect_uri = "https://localhost:5000/callback"
@@ -51,7 +74,6 @@ def run():
     token_url = "https://accounts.spotify.com/api/token"
     api_base_url = "https://api.spotify.com/v1/"
     token = get_token(client_id, client_secret)
-    print(token)
     print(get_current_track(token))
 
 if __name__ == '__main__':
